@@ -42,12 +42,12 @@ clock = pygame.time.Clock()
 
 # Тут опишите все классы игры.
 class GameObject:
-    """Абстрактный класс для объектов игры.
-    
-    Сделать ли класс абстрактным???
-    """
+    """Абстрактный класс для объектов игры."""
 
-    def __init__(self, position=(320, 240), body_color=None):
+    def __init__(self,
+                 position=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2),
+                 body_color=None
+                 ):
         """Инициализирует атрибуты позиции (координаты х и у) и
         цвета объекта."""
         self.position = position
@@ -67,10 +67,10 @@ class Apple(GameObject):
         self.position = self.randomize_position()
         self.body_color = body_color
 
-    @staticmethod
-    def randomize_position():
-        """Возвращает случайные координаты яблока."""
-        return (randint(0, 640, 20), randint(0, 480, 20))
+    def randomize_position(self):
+        """Задаёт случайные координаты яблока."""
+        self.position = (randint(0, SCREEN_WIDTH, GRID_SIZE),
+                         randint(0, SCREEN_HEIGHT, GRID_SIZE))
 
     def draw(self):
         """Отрисовывает яблоко на игровом поле."""
@@ -98,14 +98,12 @@ class Snake(GameObject):
 
     def move(self):
         """Обновляет позицию змейки."""
+        if self.length == len(self.position):
+            del self.positions[-1]
         head = tuple((x + self.direction * GRID_SIZE),
                      (y + self.direction * GRID_SIZE)
                      for x, y in self.positions[0]
                      )
-        
-        if self.length == len(self.position):# неизменилась (не съедено яблоко)
-            del self.positions[-1]
-            
         self.positions.insert(0, head)
 
     def draw(self):
@@ -132,7 +130,7 @@ class Snake(GameObject):
     def reset():
         """Сбрасывает змейку в начальное состояние"""
         self.length = 1
-        self.positions = [(320, 240)]
+        self.positions = [(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)]
         self.direction = RIGHT
         self.next_direction = None
         self.body_color = (0, 255, 0)
@@ -172,8 +170,15 @@ def main():
 
         if snake.get_head_position() == apple.position:
             snake.length += 1
+            apple.randomize_position()
+        
+        if snake.get_head_position() == snake.positions[-1]:
+            snake.reset()
 
+        snake.draw()
+        apple.draw()
 
+        pygame.display.update()
 
 
 if __name__ == '__main__':

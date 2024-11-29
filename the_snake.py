@@ -64,7 +64,7 @@ class Apple(GameObject):
     местоположение и  действия с ним.
     """
 
-    def __init__(self, body_color=(255, 0, 0)):
+    def __init__(self, body_color=APPLE_COLOR):
         self.randomize_position()
         self.body_color = body_color
 
@@ -83,10 +83,10 @@ class Apple(GameObject):
 class Snake(GameObject):
     """Описывает змейку: её характеристики, движение, длину."""
 
-    def __init__(self, body_color=(0, 255, 0)):
+    def __init__(self, body_color=SNAKE_COLOR):
         """Инициализирует атрибуты змейки."""
         self.length = 1
-        self.positions = [(320, 240)]
+        self.positions = [(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)]
         self.direction = RIGHT
         self.next_direction = None
         self.body_color = body_color
@@ -101,12 +101,12 @@ class Snake(GameObject):
         """Обновляет позицию змейки."""
         head = (self.positions[0][0] + self.direction[0] * GRID_SIZE,
                 self.positions[0][1] + self.direction[1] * GRID_SIZE)
-    
 
         self.positions.insert(0, self._normalize_position(head))
-        self.last = self.positions[-1]
-        if self.length == len(self.positions) + 1:
+       
+        if self.length != len(self.positions):
             del self.positions[-1]
+        self.last = self.positions[-1]
 
     @staticmethod
     def _normalize_position(position):

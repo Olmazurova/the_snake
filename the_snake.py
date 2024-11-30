@@ -1,4 +1,4 @@
-from random import choice, randint
+from random import choice
 from typing import Optional
 
 import pygame
@@ -44,14 +44,10 @@ clock = pygame.time.Clock()
 class GameObject:
     """Абстрактный класс для объектов игры."""
 
-    def __init__(self,
-                 position=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2),
-                 body_color=None
-                 ):
-        """Инициализирует атрибуты позиции (координаты х и у) и
-        цвета объекта.
-        """
-        self.position = position
+    position = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
+
+    def __init__(self, body_color=None):
+        """Инициализирует атрибут цвета объекта."""
         self.body_color = body_color
 
     def draw(self):
@@ -75,7 +71,7 @@ class Apple(GameObject):
 
     def draw(self):
         """Отрисовывает яблоко на игровом поле."""
-        rect = pygame.Rect(*self.position, GRID_SIZE, GRID_SIZE)
+        rect = pygame.Rect(self.position, (GRID_SIZE, GRID_SIZE))
         pygame.draw.rect(screen, self.body_color, rect)
         pygame.draw.rect(screen, BORDER_COLOR, rect, 1)
 
@@ -103,13 +99,11 @@ class Snake(GameObject):
                 self.positions[0][1] + self.direction[1] * GRID_SIZE)
 
         self.positions.insert(0, self._normalize_position(head))
-       
+
         if self.length < len(self.positions):
             self.last = self.positions.pop()
         else:
             self.last = self.positions[-1]
-         
-        
 
     @staticmethod
     def _normalize_position(position):
@@ -132,8 +126,14 @@ class Snake(GameObject):
 
         # Затирание последнего сегмента
         if self.last:
-            last_rect = pygame.Rect(self.last, (GRID_SIZE, GRID_SIZE))
-            pygame.draw.rect(screen, BOARD_BACKGROUND_COLOR, last_rect)
+            self.draw_background()
+
+    def draw_background(self, coordinates=None):
+        """Затирает переданные координаты цветом бекграунда."""
+        if coordinates is None:
+            coordinates = self.last
+        last_rect = pygame.Rect(coordinates, (GRID_SIZE, GRID_SIZE))
+        pygame.draw.rect(screen, BOARD_BACKGROUND_COLOR, last_rect)
 
     def get_head_position(self):
         """Возвращает позицию головы змейки."""
@@ -141,14 +141,14 @@ class Snake(GameObject):
 
     def reset(self):
         """Сбрасывает змейку в начальное состояние"""
-        self.last = self.positions
+        for coordinate in [*self.positions, self.last]:
+            self.draw_background(coordinate)
         self.length = 1
         self.positions = [(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)]
         self.direction = RIGHT
         self.next_direction = None
         self.body_color = (0, 255, 0)
-        
-
+        self.last = None
 
 
 def handle_keys(game_object):
@@ -191,7 +191,7 @@ def main():
             # snake.last = None # !!!
             apple.randomize_position()
 
-        if snake.get_head_position() == snake.last:
+        if snake.get_head_position() in snake.positions[1:]:
             snake.reset()
 
         snake.draw()

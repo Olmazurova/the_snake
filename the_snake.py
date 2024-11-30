@@ -1,6 +1,4 @@
-from random import choice
-from typing import Optional
-
+from random import choice, randint
 import pygame
 
 # Константы для размеров поля и сетки:
@@ -24,8 +22,14 @@ BORDER_COLOR = (93, 216, 228)
 # Цвет яблока
 APPLE_COLOR = (255, 0, 0)
 
+# Цвет отравы
+POISON_COLOR = (102, 0, 255)
+
 # Цвет змейки
 SNAKE_COLOR = (0, 255, 0)
+
+# Цвет камня
+STONE_COLOR = (127, 118, 121)
 
 # Скорость движения змейки:
 SPEED = 15
@@ -54,6 +58,11 @@ class GameObject:
         """Абстрактный метод для отрисовки объектов на игровом поле."""
         pass
 
+    def randomize_position(self):
+        """Задаёт случайные координаты объекта."""
+        self.position = (choice(tuple(range(0, SCREEN_WIDTH, GRID_SIZE))),
+                         choice(tuple(range(0, SCREEN_HEIGHT, GRID_SIZE))))
+
 
 class Apple(GameObject):
     """Описывает яблоко: все его характеристики,
@@ -61,13 +70,26 @@ class Apple(GameObject):
     """
 
     def __init__(self, body_color=APPLE_COLOR):
+        """Инициализирует атрибуты яблока."""
         self.randomize_position()
         self.body_color = body_color
 
-    def randomize_position(self):
-        """Задаёт случайные координаты яблока."""
-        self.position = (choice(tuple(range(0, SCREEN_WIDTH, GRID_SIZE))),
-                         choice(tuple(range(0, SCREEN_HEIGHT, GRID_SIZE))))
+    def draw(self):
+        """Отрисовывает яблоко на игровом поле."""
+        rect = pygame.Rect(self.position, (GRID_SIZE, GRID_SIZE))
+        pygame.draw.rect(screen, self.body_color, rect)
+        pygame.draw.rect(screen, BORDER_COLOR, rect, 1)
+
+
+class Poison(GameObject):
+    """Описывает отраву разбросанную по полю,
+    если змейка её съест - отравиться и её длина уменьшинться.
+    """
+
+    def __init__(self, body_color=POISON_COLOR):
+        """Инициализирует атрибуты отравы."""
+        self.randomize_position()
+        self.body_color = body_color
 
     def draw(self):
         """Отрисовывает яблоко на игровом поле."""
@@ -101,7 +123,9 @@ class Snake(GameObject):
         self.positions.insert(0, self._normalize_position(head))
 
         if self.length < len(self.positions):
-            self.last = self.positions.pop()
+            for _ in range(len(self.positions) - self.length):
+                self.last = self.positions.pop()
+                self.draw_background()
         else:
             self.last = self.positions[-1]
 
@@ -151,6 +175,23 @@ class Snake(GameObject):
         self.last = None
 
 
+class Stone(GameObject):
+    """Описывает препятствие в виде камня,
+    его характеристики и действия с ним.
+    """
+
+    def __init__(self, body_color=STONE_COLOR):
+        """Инициализирует атрибуты камня."""
+        self.randomize_position()
+        self.body_color = body_color
+
+    def draw(self):
+        """Отрисовывает камень на игровом поле."""
+        rect = pygame.Rect(self.position, (GRID_SIZE, GRID_SIZE))
+        pygame.draw.rect(screen, self.body_color, rect)
+        pygame.draw.rect(screen, BORDER_COLOR, rect, 1)
+
+
 def handle_keys(game_object):
     """Изменяет направление движения змейки
     в зависимости от нажатой клавиши.
@@ -177,6 +218,8 @@ def main():
     # Тут нужно создать экземпляры классов.
     snake = Snake()
     apple = Apple()
+    poison = Poison()
+    stones = [Stone() for _ in range(1, randint(2, 4))]
 
     while True:
         clock.tick(SPEED)
@@ -188,14 +231,23 @@ def main():
 
         if snake.get_head_position() == apple.position:
             snake.length += 1
-            # snake.last = None # !!!
             apple.randomize_position()
+
+        if snake.get_head_position() == poison.position:
+            snake.length -= 1
+            poison.randomize_position()
 
         if snake.get_head_position() in snake.positions[1:]:
             snake.reset()
 
+        if snake.get_head_position() in [stone.position for stone in stones]:
+            snake.reset()
+
         snake.draw()
         apple.draw()
+        poison.draw()
+        for stone in stones:
+            stone.draw()
 
         pygame.display.update()
 

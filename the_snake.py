@@ -26,7 +26,7 @@ APPLE_COLOR = (255, 0, 0)
 POISON_COLOR = (102, 0, 255)
 
 # Цвет змейки
-SNAKE_COLOR = (80, 200, 120)
+SNAKE_COLOR = (119, 221, 119)
 
 # Цвет камня
 STONE_COLOR = (127, 118, 121)
@@ -65,12 +65,10 @@ class GameObject:
 
 
 class Apple(GameObject):
-    """Описывает яблоко: все его характеристики,
-    местоположение и  действия с ним.
-    """
+    """Описывает яблоко, его артрибуты и методы."""
 
     def __init__(self, body_color=APPLE_COLOR):
-        """Инициализирует атрибуты яблока."""
+        """Инициализирует атрибуты яблока: позицию и цвет."""
         self.randomize_position()
         self.body_color = body_color
 
@@ -82,12 +80,10 @@ class Apple(GameObject):
 
 
 class Poison(GameObject):
-    """Описывает отраву разбросанную по полю,
-    если змейка её съест - отравиться и её длина уменьшинться.
-    """
+    """Описывает отраву, её атрибуты и методы."""
 
     def __init__(self, body_color=POISON_COLOR):
-        """Инициализирует атрибуты отравы."""
+        """Инициализирует атрибуты отравы: позицию и цвет."""
         self.randomize_position()
         self.body_color = body_color
 
@@ -99,10 +95,17 @@ class Poison(GameObject):
 
 
 class Snake(GameObject):
-    """Описывает змейку: её характеристики, движение, длину."""
+    """Описывает змейку, её атрибуты и методы."""
 
     def __init__(self, body_color=SNAKE_COLOR):
-        """Инициализирует атрибуты змейки."""
+        """Инициализирует атрибуты змейки.
+
+        length - длина
+        positions - список координат каждой ячейки змейки
+        direction - текущее направление движения змейки
+        next_direction - следующее направление движения змейки
+        body_color - цвет змейки
+        """
         self.length = 1
         self.positions = [(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)]
         self.direction = RIGHT
@@ -171,17 +174,15 @@ class Snake(GameObject):
         self.positions = [(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)]
         self.direction = RIGHT
         self.next_direction = None
-        self.body_color = (0, 255, 0)
+        self.body_color = self.body_color
         self.last = None
 
 
 class Stone(GameObject):
-    """Описывает препятствие в виде камня,
-    его характеристики и действия с ним.
-    """
+    """Описывает препятствие - камень, его атрибуты и методы."""
 
     def __init__(self, body_color=STONE_COLOR):
-        """Инициализирует атрибуты камня."""
+        """Инициализирует атрибуты камня: позицию и цвет."""
         self.randomize_position()
         self.body_color = body_color
 
@@ -193,9 +194,7 @@ class Stone(GameObject):
 
 
 def handle_keys(game_object):
-    """Изменяет направление движения змейки
-    в зависимости от нажатой клавиши.
-    """
+    """Изменяет направление движения змейки от нажатой клавиши."""
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
@@ -229,20 +228,27 @@ def main():
         snake.update_direction()
         snake.move()
 
+        # Проверка: съедено ли яблоко и увеличение длины змейки
         if snake.get_head_position() == apple.position:
             snake.length += 1
             apple.randomize_position()
 
+        # Проверка: съедена ли отрава и уменьшение длины змейки
         if snake.get_head_position() == poison.position:
             snake.length -= 1
+            if snake.length == 0:
+                snake.reset()
             poison.randomize_position()
 
+        # Проверка: врезалась ли змейка сама в себя
         if snake.get_head_position() in snake.positions[1:]:
             snake.reset()
 
+        # Проверка: врезалась ли змейка в камень
         if snake.get_head_position() in [stone.position for stone in stones]:
             snake.reset()
 
+        # Отрисовка объектов
         snake.draw()
         apple.draw()
         poison.draw()

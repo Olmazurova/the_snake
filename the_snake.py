@@ -26,7 +26,7 @@ APPLE_COLOR = (255, 0, 0)
 POISON_COLOR = (102, 0, 255)
 
 # Цвет змейки
-SNAKE_COLOR = (0, 255, 0)
+SNAKE_COLOR = (80, 200, 120)
 
 # Цвет камня
 STONE_COLOR = (127, 118, 121)
@@ -153,7 +153,7 @@ class Snake(GameObject):
             self.draw_background()
 
     def draw_background(self, coordinates=None):
-        """Затирает переданные координаты цветом бекграунда."""
+        """Затирает переданные координаты цветом игрового поля."""
         if coordinates is None:
             coordinates = self.last
         last_rect = pygame.Rect(coordinates, (GRID_SIZE, GRID_SIZE))
@@ -164,7 +164,7 @@ class Snake(GameObject):
         return self.positions[0]
 
     def reset(self):
-        """Сбрасывает змейку в начальное состояние"""
+        """Сбрасывает змейку в начальное состояние."""
         for coordinate in [*self.positions, self.last]:
             self.draw_background(coordinate)
         self.length = 1

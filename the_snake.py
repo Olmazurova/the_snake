@@ -22,13 +22,13 @@ BORDER_COLOR = (93, 216, 228)
 # Цвет яблока
 APPLE_COLOR = (255, 0, 0)
 
-# Цвет отравы
+# Цвет отравы - сиреневый:
 POISON_COLOR = (102, 0, 255)
 
-# Цвет змейки
+# Цвет змейки - зелёный:
 SNAKE_COLOR = (119, 221, 119)
 
-# Цвет камня
+# Цвет камня - серый:
 STONE_COLOR = (127, 118, 121)
 
 # Скорость движения змейки:
@@ -44,11 +44,11 @@ pygame.display.set_caption('Змейка')
 clock = pygame.time.Clock()
 
 
-# Тут опишите все классы игры.
 class GameObject:
     """Абстрактный класс для объектов игры."""
 
     position = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
+    points_used: list[tuple] = []
 
     def __init__(self, body_color=None):
         """Инициализирует атрибут цвета объекта."""
@@ -58,10 +58,21 @@ class GameObject:
         """Абстрактный метод для отрисовки объектов на игровом поле."""
         pass
 
+    def draw_cell(self):
+        """Отрисовывает на игровом поле объект размером в 1 ячейку."""
+        rect = pygame.Rect(self.position, (GRID_SIZE, GRID_SIZE))
+        pygame.draw.rect(screen, self.body_color, rect)
+        pygame.draw.rect(screen, BORDER_COLOR, rect, 1)
+
     def randomize_position(self):
         """Задаёт случайные координаты объекта."""
-        self.position = (choice(tuple(range(0, SCREEN_WIDTH, GRID_SIZE))),
-                         choice(tuple(range(0, SCREEN_HEIGHT, GRID_SIZE))))
+        new_position = (choice(tuple(range(0, SCREEN_WIDTH, GRID_SIZE))),
+                        choice(tuple(range(0, SCREEN_HEIGHT, GRID_SIZE))))
+        while new_position in self.points_used:
+            new_position = (choice(tuple(range(0, SCREEN_WIDTH, GRID_SIZE))),
+                            choice(tuple(range(0, SCREEN_HEIGHT, GRID_SIZE))))
+        self.position = new_position
+        self.points_used.append(self.position)
 
 
 class Apple(GameObject):
@@ -72,12 +83,6 @@ class Apple(GameObject):
         self.randomize_position()
         self.body_color = body_color
 
-    def draw(self):
-        """Отрисовывает яблоко на игровом поле."""
-        rect = pygame.Rect(self.position, (GRID_SIZE, GRID_SIZE))
-        pygame.draw.rect(screen, self.body_color, rect)
-        pygame.draw.rect(screen, BORDER_COLOR, rect, 1)
-
 
 class Poison(GameObject):
     """Описывает отраву, её атрибуты и методы."""
@@ -86,12 +91,6 @@ class Poison(GameObject):
         """Инициализирует атрибуты отравы: позицию и цвет."""
         self.randomize_position()
         self.body_color = body_color
-
-    def draw(self):
-        """Отрисовывает яблоко на игровом поле."""
-        rect = pygame.Rect(self.position, (GRID_SIZE, GRID_SIZE))
-        pygame.draw.rect(screen, self.body_color, rect)
-        pygame.draw.rect(screen, BORDER_COLOR, rect, 1)
 
 
 class Snake(GameObject):
@@ -111,6 +110,7 @@ class Snake(GameObject):
         self.direction = RIGHT
         self.next_direction = None
         self.body_color = body_color
+        self.points_used.extend(*self.positions)
 
     def update_direction(self):
         """Обновляет направление движения змейки."""
@@ -124,11 +124,14 @@ class Snake(GameObject):
                 self.positions[0][1] + self.direction[1] * GRID_SIZE)
 
         self.positions.insert(0, self._normalize_position(head))
+        self.points_used.append(head)
 
         if self.length < len(self.positions):
             for _ in range(len(self.positions) - self.length):
                 self.last = self.positions.pop()
                 self.draw_background()
+                if self.last in self.points_used:
+                    del self.points_used[self.points_used.index(self.last)]
         else:
             self.last = self.positions[-1]
 
@@ -170,6 +173,9 @@ class Snake(GameObject):
         """Сбрасывает змейку в начальное состояние."""
         for coordinate in [*self.positions, self.last]:
             self.draw_background(coordinate)
+            if coordinate in self.points_used:
+                del self.points_used[self.points_used.index(coordinate)]
+
         self.length = 1
         self.positions = [(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)]
         self.direction = RIGHT
@@ -185,12 +191,6 @@ class Stone(GameObject):
         """Инициализирует атрибуты камня: позицию и цвет."""
         self.randomize_position()
         self.body_color = body_color
-
-    def draw(self):
-        """Отрисовывает камень на игровом поле."""
-        rect = pygame.Rect(self.position, (GRID_SIZE, GRID_SIZE))
-        pygame.draw.rect(screen, self.body_color, rect)
-        pygame.draw.rect(screen, BORDER_COLOR, rect, 1)
 
 
 def handle_keys(game_object):
@@ -214,7 +214,8 @@ def main():
     """Основной процесс игры."""
     # Инициализация PyGame:
     pygame.init()
-    # Тут нужно создать экземпляры классов.
+
+    # Создание экземпляров классов.
     snake = Snake()
     apple = Apple()
     poison = Poison()
@@ -223,7 +224,6 @@ def main():
     while True:
         clock.tick(SPEED)
 
-        # Тут опишите основную логику игры.
         handle_keys(snake)
         snake.update_direction()
         snake.move()
@@ -231,6 +231,7 @@ def main():
         # Проверка: съедено ли яблоко и увеличение длины змейки
         if snake.get_head_position() == apple.position:
             snake.length += 1
+            del apple.points_used[apple.points_used.index(apple.position)]
             apple.randomize_position()
 
         # Проверка: съедена ли отрава и уменьшение длины змейки
@@ -238,6 +239,7 @@ def main():
             snake.length -= 1
             if snake.length == 0:
                 snake.reset()
+            del poison.points_used[poison.points_used.index(poison.position)]
             poison.randomize_position()
 
         # Проверка: врезалась ли змейка сама в себя
@@ -250,10 +252,10 @@ def main():
 
         # Отрисовка объектов
         snake.draw()
-        apple.draw()
-        poison.draw()
+        apple.draw_cell()
+        poison.draw_cell()
         for stone in stones:
-            stone.draw()
+            stone.draw_cell()
 
         pygame.display.update()
 

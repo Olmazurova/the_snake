@@ -120,8 +120,8 @@ class Snake(GameObject):
 
     def move(self):
         """Обновляет позицию змейки."""
-        head = (self.positions[0][0] + self.direction[0] * GRID_SIZE,
-                self.positions[0][1] + self.direction[1] * GRID_SIZE)
+        head = (self.get_head_position()[0] + self.direction[0] * GRID_SIZE,
+                self.get_head_position()[1] + self.direction[1] * GRID_SIZE)
 
         self.positions.insert(0, self._normalize_position(head))
         self.points_used.append(head)
@@ -176,12 +176,7 @@ class Snake(GameObject):
             if coordinate in self.points_used:
                 del self.points_used[self.points_used.index(coordinate)]
 
-        self.length = 1
-        self.positions = [(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)]
-        self.direction = RIGHT
-        self.next_direction = None
-        self.body_color = self.body_color
-        self.last = None
+        self.__init__()
 
 
 class Stone(GameObject):

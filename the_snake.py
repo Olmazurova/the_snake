@@ -56,7 +56,7 @@ class GameObject:
 
     def draw(self):
         """Абстрактный метод для отрисовки объектов на игровом поле."""
-        pass
+        raise NotImplementedError
 
     def draw_cell(self):
         """Отрисовывает на игровом поле объект размером в 1 ячейку."""
@@ -105,12 +105,7 @@ class Snake(GameObject):
         next_direction - следующее направление движения змейки
         body_color - цвет змейки
         """
-        self.length = 1
-        self.positions = [(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)]
-        self.direction = RIGHT
-        self.next_direction = None
-        self.body_color = body_color
-        self.points_used.extend(*self.positions)
+        self.reset(body_color=body_color)
 
     def update_direction(self):
         """Обновляет направление движения змейки."""
@@ -169,14 +164,21 @@ class Snake(GameObject):
         """Возвращает позицию головы змейки."""
         return self.positions[0]
 
-    def reset(self):
+    def reset(self, body_color=SNAKE_COLOR):
         """Сбрасывает змейку в начальное состояние."""
+        self.length = 1
+        self.positions = [(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)]
+        self.direction = RIGHT
+        self.next_direction = None
+        self.body_color = body_color
+        self.points_used.extend(*self.positions)
+
+    def clear_snake(self):
+        """Затирает на игровом поле старое положение змейки."""
         for coordinate in [*self.positions, self.last]:
             self.draw_background(coordinate)
             if coordinate in self.points_used:
                 del self.points_used[self.points_used.index(coordinate)]
-
-        self.__init__()
 
 
 class Stone(GameObject):
@@ -233,16 +235,19 @@ def main():
         if snake.get_head_position() == poison.position:
             snake.length -= 1
             if snake.length == 0:
+                snake.clear_snake()
                 snake.reset()
             del poison.points_used[poison.points_used.index(poison.position)]
             poison.randomize_position()
 
         # Проверка: врезалась ли змейка сама в себя
         if snake.get_head_position() in snake.positions[1:]:
+            snake.clear_snake()
             snake.reset()
 
         # Проверка: врезалась ли змейка в камень
         if snake.get_head_position() in [stone.position for stone in stones]:
+            snake.clear_snake()
             snake.reset()
 
         # Отрисовка объектов
